@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from provider.g5k import G5K
-from utils.constants import SYMLINK_NAME
+from ..provider.g5k import G5K
+from constants import SYMLINK_NAME
 from functools import wraps
 
 import os

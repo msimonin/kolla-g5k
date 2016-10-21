@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from provider import Provider
-from utils.constants import HAM_PATH, EXTERNAL_IFACE
+from ..utils.constants import HAM_PATH, EXTERNAL_IFACE
 
 import yaml
 import os

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from utils.constants import TEMPLATE_DIR
+from constants import TEMPLATE_DIR
 
 from ansible.inventory import Inventory
 from collections import namedtuple

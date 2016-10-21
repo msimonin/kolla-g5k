@@ -21,6 +21,7 @@ Commands:
 
 See 'ham <command> --help' for more information on a specific command.
 """
+from . import __version__
 from utils.constants import *
 from utils.extra import *
 from utils.hamtask import hamtask
@@ -47,8 +48,6 @@ from subprocess import call
 import yaml
 
 CALL_PATH = os.getcwd()
-
-__version__ = 'ham version 0.1'
 
 @hamtask("""
 usage: ham up [-f CONFIG_PATH] [--force-deploy] [-t TAGS | --tags=TAGS]
@@ -370,7 +369,8 @@ def deploy(**kwargs):
     install_os(**kwargs)
     init_os(**kwargs)
 
-if __name__ == "__main__":
+
+def main():
     args = docopt(__doc__,
                   version=__version__,
                   options_first=True)
@@ -399,3 +399,6 @@ if __name__ == "__main__":
     elif args['<command>'] == 'info':
         info(**docopt(info.__doc__, argv=argv))
     else: pass
+
+if __name__ == '__main__':
+    main()
