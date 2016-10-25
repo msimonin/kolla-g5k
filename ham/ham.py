@@ -352,7 +352,7 @@ def info(env=None, **kwargs):
 
 @hamtask("""
 usage: ham deploy [-f CONFIG_PATH] [--force-deploy]
-                  [--provider=PROVIDER]
+                  [--provider=PROVIDER] [-t TAGS | --tags=TAGS]
                   [--reconfigure] [-vv|-s|--silent]
 
 Shortcut for ham up, then ham os, and finally ham config.
