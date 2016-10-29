@@ -46,6 +46,8 @@ import sys
 from subprocess import call
 
 import yaml
+import json
+import itertools
 
 CALL_PATH = os.getcwd()
 
@@ -292,35 +294,60 @@ def init_os(env=None, **kwargs):
         neutron.create_subnet({'subnet': subnet})
         logging.info("%s has been created on OpenStack" % subnet_name)
 
+
 @hamtask("""
-usage: ham bench [--scenarios=SCENARIOS] [--times=TIMES]
-                 [--concurrency=CONCURRENCY] [--wait=WAIT]
+usage: ham bench [--workload=WORKLOAD]
                  [-vv|-s|--silent]
 
 Run rally on this OpenStack.
 
 Options:
   -h --help                 Show this help message.
-  --scenarios=SCENARIOS     Name of the files containing the scenarios
-                            to launch. The file must reside under the
-                            rally directory.
-  --times=TIMES             Number of times to run each scenario
-                            [default: 1].
-  --concurrency=CONCURRENCY Concurrency level of the tasks in each
-                            scenario [default: 1].
-  --wait=WAIT               Seconds to wait between two scenarios
-                            [default: 0].
+  --workload=WORKLOAD       Path to the workload directory.
+                            This directory must contain a run.yml file
+                            that contains the description of the different
+                            scenarios to launch
 """)
 def bench(env=None, **kwargs):
+    def cartesian(d):
+        """returns the cartesian product of the args."""
+        logging.debug(d)
+        f = []
+        for k, v in d.items():
+            if isinstance(v, list):
+              f.extend([[[k, vv] for vv in v]])
+            else:
+              f.append([[k,v]])
+        logging.debug(f)
+        product = []
+        for e in itertools.product(*f):
+            product.append(dict(e))
+        return product
+
     logging.debug('phase[bench]: args=%s' % kwargs)
-    playbook_path = os.path.join(ANSIBLE_DIR, 'run-bench.yml')
+    workload_dir = kwargs["--workload"]
+    with open(os.path.join(workload_dir, "run.yml")) as workload_f:
+        workload = yaml.load(workload_f)
+        for nature, desc in workload.items():
+            scenarios = desc["scenarios"]
+            for scenario in scenarios:
+                top_args = desc["args"]
+                args = scenario["args"]
+                # override top args
+                top_args.update(args)
+                for a in cartesian(top_args):
+                    playbook_path = os.path.join(ANSIBLE_DIR, 'run-bench.yml')
+                    inventory_path = os.path.join(SYMLINK_NAME, 'multinode')
+                    # NOTE(msimonin) all the scenarios must reside on the workload directory
+                    env['config']['rally_scenario'] = os.path.abspath(os.path.join(workload_dir, scenario["file"]))
+                    env['config']['rally_scenario_args'] = a
+                    run_ansible([playbook_path], inventory_path, env['config'])
+    playbook_path = os.path.join(ANSIBLE_DIR, 'backup.yml')
     inventory_path = os.path.join(SYMLINK_NAME, 'multinode')
-    if kwargs["--scenarios"]:
-        env['config']['rally_scenarios_list'] = kwargs["--scenarios"]
-    env['config']['rally_times'] = kwargs["--times"]
-    env['config']['rally_concurrency'] = kwargs["--concurrency"]
-    env['config']['rally_wait'] = kwargs["--wait"]
     run_ansible([playbook_path], inventory_path, env['config'])
+
+
+
 
 @hamtask("""usage: ham ssh-tunnel""")
 def ssh_tunnel(env=None, **kwargs):
